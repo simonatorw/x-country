@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>X-Country</title>
+		<style>
+			body {
+				background-color: #000;
+				color: #ddd;
+				font-family: verdana, sans-serif;
+				font-size: 12px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 93vh;
+				margin: 0;
+			}
+			#container {
+				display: flex;
+				flex: 0;
+				flex-flow: row wrap;
+				background-color: black;
+				border-radius: 6px;
+			}
+			
+			/* board */
+			
+			.row {
+				flex: 0 0 100%;
+				display: flex;
+			}
+			.tree {
+				width: 20px;
+				height: 20px;
+				background-color: transparent;
+				color: green;
+				box-sizing: border-box;
+				position: relative;
+				top: -5px;
+				left: 4px;
+			}
+			.tree:before {
+				content: "\2022";
+				font-size: 20px;
+			}
+			.path {
+				width: 20px;
+				height: 20px;
+				background-color: white;
+			}
+			.up {
+				width: 20px;
+				height: 20px;
+				background-color: #ccc;
+			}
+			.down {
+				width: 20px;
+				height: 20px;
+				background-color: cyan;
+			}
+			.blank {
+				width: 20px;
+				height: 20px;
+				background-color: black;	
+			}
+		</style>
+	</head>
+	<body>
+		<section id="container"></section>
+		<script type="module">
+			import { el, rand, sleep, qry, qryAll, log, sortDesc, renderColorText } from '../lib/lib.js';
+
+			(function() {
+				const board = [
+					[6,0,0,0,3,3,3,3,3,3,3],
+					[1,1,2,0,3,0,0,0,0,0,3],
+					[1,0,2,0,3,6,6,6,6,0,1],
+					[1,0,2,0,3,0,6,6,6,0,1],
+					[1,0,2,2,1,0,6,6,6,0,1],
+					[1,0,0,0,0,0,6,6,6,0,1],
+					[1,0,6,6,6,0,0,6,0,0,1],
+					[1,0,6,6,6,0,1,1,2,0,1],
+					[3,0,0,0,0,0,1,0,2,0,1],						
+					[3,3,3,3,3,3,1,0,2,0,1],
+					[0,0,0,0,0,0,0,6,2,2,1]						
+				];			
+				const map = [
+					'tree',
+					'path',
+					'up',
+					'down',
+					'',
+					'',
+					'blank'
+				];
+							
+				function renderBoard() {
+					const max = board.length;
+					let tpl = ``;
+					
+					for (let i = 0; i < max; i++) {
+						for (let j = 0; j < board[i].length; j++) {
+							if (j === 0) {
+								tpl = `${tpl}<div class="row">`;
+							}
+					
+							tpl = `${tpl}<div class="${map[board[i][j]]}"></div>`;
+							
+							if (j === board[i].length - 1) {
+								tpl = `${tpl}</div>`;
+							}
+						}
+					}
+					
+					el('container').insert(tpl);
+				}
+				
+				function init() {
+					console.log('Started.');
+					renderBoard();
+				}
+
+				return {
+					init
+				};
+			})().init();
+		</script>
+	</body>
+</html>
