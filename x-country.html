@@ -5,8 +5,12 @@
 		<meta charset="utf-8">
 		<title>X-Country</title>
 		<style>
+			:root {
+        --bg-color: black;
+        --path-color: white;
+      }
 			body {
-				background-color: #000;
+				background-color: var(--bg-color);
 				color: #ddd;
 				font-family: verdana, sans-serif;
 				font-size: 12px;
@@ -20,7 +24,6 @@
 				display: flex;
 				flex: 0;
 				flex-flow: row wrap;
-				background-color: black;
 				border-radius: 6px;
 			}
 			
@@ -34,11 +37,11 @@
 				width: 20px;
 				height: 20px;
 				background-color: transparent;
-				color: green;
+				color: lightgreen;
 				box-sizing: border-box;
 				position: relative;
-				top: -5px;
-				left: 4px;
+				top: -2px;
+				left: 5px;
 			}
 			.tree:before {
 				content: "\2022";
@@ -47,22 +50,38 @@
 			.path {
 				width: 20px;
 				height: 20px;
-				background-color: white;
+				background-color: var(--path-color);
+				border-top: 1px solid var(--path-color);
+				border-bottom: 1px solid var(--path-color);
+			}
+			.fin {
+				width: 20px;
+				height: 20px;
+				background-color: var(--path-color);
+				border-top: 2px solid red;
+				border-bottom: 0;
 			}
 			.up {
 				width: 20px;
 				height: 20px;
 				background-color: #ccc;
+				border-top: 1px solid #ccc;
+				border-bottom: 1px solid #ccc;
 			}
 			.down {
 				width: 20px;
 				height: 20px;
 				background-color: cyan;
+				border-top: 1px solid cyan;
+				border-bottom: 1px solid cyan;
 			}
 			.blank {
 				width: 20px;
 				height: 20px;
-				background-color: black;	
+			}
+			#us {
+				color: blue;
+				position: absolute;
 			}
 		</style>
 	</head>
@@ -73,17 +92,17 @@
 
 			(function() {
 				const board = [
-					[6,0,0,0,3,3,3,3,3,3,3],
+					[7,0,0,0,3,3,3,3,3,3,3],
 					[1,1,2,0,3,0,0,0,0,0,3],
-					[1,0,2,0,3,6,6,6,6,0,1],
-					[1,0,2,0,3,0,6,6,6,0,1],
-					[1,0,2,2,1,0,6,6,6,0,1],
-					[1,0,0,0,0,0,6,6,6,0,1],
-					[1,0,6,6,6,0,0,6,0,0,1],
-					[1,0,6,6,6,0,1,1,2,0,1],
+					[1,0,2,0,1,7,7,7,7,0,1],
+					[1,0,2,0,1,0,7,7,7,0,1],
+					[6,0,2,2,1,0,7,7,7,0,1],
+					[1,0,0,0,0,0,7,7,7,0,1],
+					[1,0,7,7,7,0,0,7,0,0,1],
+					[1,0,7,7,7,0,1,1,2,0,1],
 					[3,0,0,0,0,0,1,0,2,0,1],						
 					[3,3,3,3,3,3,1,0,2,0,1],
-					[0,0,0,0,0,0,0,6,2,2,1]						
+					[0,0,0,0,0,0,0,7,2,2,1]						
 				];			
 				const map = [
 					'tree',
@@ -92,9 +111,15 @@
 					'down',
 					'',
 					'',
+					'fin',
 					'blank'
 				];
-							
+				let curY;
+				let curX;
+				let dirIndex = 0;
+				let dirList = ['u', 'r', 'd', 'r'];
+				let dir = 'u';
+
 				function renderBoard() {
 					const max = board.length;
 					let tpl = ``;
@@ -115,10 +140,104 @@
 					
 					el('container').insert(tpl);
 				}
+
+				function checkBarrier() {
+					let indY;
+					let indX;
+					let nextX;
+					let nextY;
+
+					switch (dir) {
+						case 'u':
+							nextY = curY - 10;
+							indX = Math.floor(curX / 20);
+							indY = Math.floor(nextY / 20);
+							break;
+						case 'r':
+							nextX = curX + 10;
+							indX = Math.floor(nextX / 20);
+							indY = Math.floor(curY / 20);
+							break;
+						case 'd':
+							nextY = curY + 10;
+							indX = Math.floor(curX / 20);
+							indY = Math.floor(nextY / 20);
+							break;
+						case 'l':
+							nextX = curX - 10;
+							indX = Math.floor(nextX / 20);
+							indY = Math.floor(curY / 20);
+							break;
+					}
+console.log(indY, indX)
+					if (indY >= 0 && indY < board.length && indX >= 0 && indX < board[0].length && board[indY][indX] > 0 && board[indY][indX] < 7) {
+						switch (dir) {
+							case 'u':
+							case 'd':
+								curY = nextY;
+								break;
+							case 'r':
+							case 'l':
+								curX = nextX;
+								break;
+						}
+					} else {
+						dirIndex++;
+						if (dirIndex >= dirList.length) {
+							dirIndex = 0;
+						}
+
+						dir = dirList[dirIndex]; 
+						checkBarrier();
+					}
+				}
+
+				async function move(id, spaces) {
+					for (let i = 0; i < spaces; i++) {
+						checkBarrier();
+						await go();
+					}
+				}
+
+				async function go() {
+					switch (dir) {
+						case 'u':
+						case 'd':
+							await animateY('us', curY, 1);
+							break;
+						case 'r':
+						case 'l':
+							await animateX('us', curX, 1);
+							break;
+					}
+
+					return Promise.resolve();
+				}
+
+				async function animateY(id, nextY, dur) {			
+					await sleep(dur);
+					el(id).style('marginTop', `${nextY}px`);
+
+					return Promise.resolve();
+				}
+
+				async function animateX(id, nextX, dur) {			
+					await sleep(dur);
+					el(id).style('marginLeft', `${nextX}px`);
+
+					return Promise.resolve();
+				}
 				
 				function init() {
 					console.log('Started.');
 					renderBoard();
+
+					el('container').append('<div id="us">x</div>');
+					el('us').style('marginTop', '90px');
+					el('us').style('marginLeft', '0');
+					curY = parseInt(document.getElementById('us').style.marginTop, 10);
+					curX = parseInt(document.getElementById('us').style.marginLeft, 10);
+					move('us', 100);
 				}
 
 				return {
