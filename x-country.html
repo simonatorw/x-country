@@ -82,6 +82,24 @@
 			#us {
 				color: blue;
 				position: absolute;
+				font-size: 11px;
+				padding-top: 7px;
+			}
+			#no {
+				color: red;
+				position: absolute;
+				font-size: 11px;
+				padding-top: 7px;
+			}
+			#fi {
+				color: #333;
+				position: absolute;
+				font-size: 11px;
+				padding-top: 7px;
+			}
+			#magic-tree {
+				color: red;
+				cursor: pointer;
 			}
 		</style>
 	</head>
@@ -92,7 +110,7 @@
 
 			(function() {
 				const board = [
-					[7,0,0,0,3,3,3,3,3,3,3],
+					[0,0,0,0,3,3,3,3,3,3,3],
 					[1,1,2,0,3,0,0,0,0,0,3],
 					[1,0,2,0,1,7,7,7,7,0,1],
 					[1,0,2,0,1,0,7,7,7,0,1],
@@ -116,13 +134,36 @@
 				];
 				let curY;
 				let curX;
-				let dirIndex = 0;
-				let dirList = ['u', 'r', 'd', 'r'];
+				let indY;
+				let indX;
 				let dir = 'u';
+				let isFlag = false;
+				let playerIndex = 0;
+				let players = {
+					us: {
+						tally: 0,
+						dirIndex: 0,
+						list: false,
+						dirList: ['u', 'r', 'd', 'r']
+					},
+					no: {
+						tally: 0,
+						dirIndex: 0,
+						list: false,
+						dirList: ['u', 'r', 'd', 'r']
+					},
+					fi: {
+						tally: 0,
+						dirIndex: 0,
+						list: false,
+						dirList: ['u', 'r', 'd', 'r']
+					}
+				};
 
 				function renderBoard() {
 					const max = board.length;
 					let tpl = ``;
+					let id = '';
 					
 					for (let i = 0; i < max; i++) {
 						for (let j = 0; j < board[i].length; j++) {
@@ -130,7 +171,13 @@
 								tpl = `${tpl}<div class="row">`;
 							}
 					
-							tpl = `${tpl}<div class="${map[board[i][j]]}"></div>`;
+							if (i === 0 && j === 0) {
+								id = 'id="magic-tree"';
+							} else {
+								id = '';
+							}
+
+							tpl = `${tpl}<div ${id} class="${map[board[i][j]]}"></div>`;
 							
 							if (j === board[i].length - 1) {
 								tpl = `${tpl}</div>`;
@@ -141,15 +188,14 @@
 					el('container').insert(tpl);
 				}
 
-				function checkBarrier() {
-					let indY;
-					let indX;
+				function checkBarrier(id) {
 					let nextX;
 					let nextY;
+					dir = players[id].dirList[players[id].dirIndex];
 
 					switch (dir) {
 						case 'u':
-							nextY = curY - 10;
+							nextY = curY - 11;
 							indX = Math.floor(curX / 20);
 							indY = Math.floor(nextY / 20);
 							break;
@@ -159,7 +205,7 @@
 							indY = Math.floor(curY / 20);
 							break;
 						case 'd':
-							nextY = curY + 10;
+							nextY = curY + 11;
 							indX = Math.floor(curX / 20);
 							indY = Math.floor(nextY / 20);
 							break;
@@ -169,8 +215,9 @@
 							indY = Math.floor(curY / 20);
 							break;
 					}
-console.log(indY, indX)
-					if (indY >= 0 && indY < board.length && indX >= 0 && indX < board[0].length && board[indY][indX] > 0 && board[indY][indX] < 7) {
+					// log(id, indY, indX, dir)
+					if (indY >= 0 && indY < board.length && indX >= 0 && indX < board[0].length && 
+						board[indY][indX] > 0 && board[indY][indX] < 7) {
 						switch (dir) {
 							case 'u':
 							case 'd':
@@ -182,32 +229,45 @@ console.log(indY, indX)
 								break;
 						}
 					} else {
-						dirIndex++;
-						if (dirIndex >= dirList.length) {
-							dirIndex = 0;
+						players[id].dirIndex++;
+					
+						if (players[id].dirIndex >= players[id].dirList.length) {
+							players[id].dirIndex = 0;
 						}
 
-						dir = dirList[dirIndex]; 
-						checkBarrier();
-					}
+						if (indX === 10 && !players[id].list) {
+							players[id].dirList = ['u', 'l', 'd', 'l'];
+							isFlag = true;
+							players[id].list = true;
+						} else if (indX === 0 && players[id].list) {
+							players[id].dirList = ['u', 'r', 'd', 'r'];
+							isFlag = false;
+							players[id].list = false;
+						}
+
+						dir = players[id].dirList[players[id].dirIndex]; 
+						checkBarrier(id);
+					} 
 				}
 
 				async function move(id, spaces) {
 					for (let i = 0; i < spaces; i++) {
-						checkBarrier();
-						await go();
+						checkBarrier(id);
+						await go(id);
 					}
+
+					return Promise.resolve();
 				}
 
-				async function go() {
+				async function go(id) {
 					switch (dir) {
 						case 'u':
 						case 'd':
-							await animateY('us', curY, 1);
+							await animateY(id, curY, getDuration());
 							break;
 						case 'r':
 						case 'l':
-							await animateX('us', curX, 1);
+							await animateX(id, curX, getDuration());
 							break;
 					}
 
@@ -227,17 +287,114 @@ console.log(indY, indX)
 
 					return Promise.resolve();
 				}
+
+				function getDuration() {
+					const val = board[indY][indX];
+
+					switch (val) {
+						case 1:
+							return .3;
+						case 2:
+							return .6;
+						case 3:
+							return .1;
+						default:
+							return .2;
+					}
+				}
+
+				function addMarkers() {
+					const keys = Object.keys(players);
+
+					for (let x of keys) {
+						el('container').append(`<div id="${x}">x</div>`);
+					}
+				}
+				function setUpMarkers() {
+					el('us').style('marginTop', '78px');
+					el('us').style('marginLeft', '0');
+		
+					el('no').style('marginTop', '78px');
+					el('no').style('marginLeft', '10px');
+
+					el('fi').style('marginTop', '90px');
+					el('fi').style('marginLeft', '0px');
+				}
+
+				function switchUser(id) {
+					curY = parseInt(document.getElementById(id).style.marginTop, 10);
+					curX = parseInt(document.getElementById(id).style.marginLeft, 10);
+				}
+
+				function isFin() {
+					return players['no'].tally > 103;
+				}
+
+				function nextPlayer() {
+					const keys = Object.keys(players);
+					const player = keys[playerIndex];
+
+					playerIndex++;
+					if (playerIndex >= keys.length) {
+						playerIndex = 0;
+					}
+
+					return player;
+				}
+
+				function isWin() {
+					
+				}
+
+				async function loop() {
+					while (!isFin()) {
+						let spaces = rand(0, 10);
+						const id = nextPlayer();
+
+						players[id].tally = players[id].tally + spaces;
+						switchUser(id);
+						await move(id, spaces);
+						isWin();
+					}
+				}
+
+				function events() {
+					document.getElementById('magic-tree').addEventListener('click', e => {
+						if (isFin()) {
+							players = {
+								us: {
+									tally: 0,
+									dirIndex: 0,
+									list: false,
+									dirList: ['u', 'r', 'd', 'r']
+								},
+								no: {
+									tally: 0,
+									dirIndex: 0,
+									list: false,
+									dirList: ['u', 'r', 'd', 'r']
+								},
+								fi: {
+									tally: 0,
+									dirIndex: 0,
+									list: false,
+									dirList: ['u', 'r', 'd', 'r']
+								}
+							};
+							isFlag = false;
+							setUpMarkers();
+							loop();
+						}
+					}, false);
+				}
 				
 				function init() {
 					console.log('Started.');
 					renderBoard();
-
-					el('container').append('<div id="us">x</div>');
-					el('us').style('marginTop', '90px');
-					el('us').style('marginLeft', '0');
-					curY = parseInt(document.getElementById('us').style.marginTop, 10);
-					curX = parseInt(document.getElementById('us').style.marginLeft, 10);
-					move('us', 100);
+					events();
+					addMarkers();
+					setUpMarkers();
+					loop();
 				}
 
 				return {
