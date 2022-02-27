@@ -33,7 +33,7 @@
 				flex: 0 0 100%;
 				display: flex;
 			}
-			.tree {
+			.tree, .medal {
 				width: 20px;
 				height: 20px;
 				background-color: transparent;
@@ -43,7 +43,7 @@
 				top: -2px;
 				left: 5px;
 			}
-			.tree:before {
+			.tree:before, .medal:before {
 				content: "\2022";
 				font-size: 20px;
 			}
@@ -79,19 +79,19 @@
 				width: 20px;
 				height: 20px;
 			}
-			#us {
+			#USA {
 				color: blue;
 				position: absolute;
 				font-size: 11px;
 				padding-top: 7px;
 			}
-			#no {
+			#NOR {
 				color: red;
 				position: absolute;
 				font-size: 11px;
 				padding-top: 7px;
 			}
-			#fi {
+			#FIN {
 				color: #333;
 				position: absolute;
 				font-size: 11px;
@@ -120,7 +120,7 @@
 					[1,0,7,7,7,0,1,1,2,0,1],
 					[3,0,0,0,0,0,1,0,2,0,1],						
 					[3,3,3,3,3,3,1,0,2,0,1],
-					[0,0,0,0,0,0,0,7,2,2,1]						
+					[8,8,8,0,0,0,0,7,2,2,1]						
 				];			
 				const map = [
 					'tree',
@@ -130,7 +130,8 @@
 					'',
 					'',
 					'fin',
-					'blank'
+					'blank',
+					'medal'
 				];
 				let curY;
 				let curX;
@@ -140,25 +141,33 @@
 				let isFlag = false;
 				let playerIndex = 0;
 				let players = {
-					us: {
+					USA: {
 						tally: 0,
 						dirIndex: 0,
 						list: false,
-						dirList: ['u', 'r', 'd', 'r']
+						dirList: [],
+						dir: 'u'
 					},
-					no: {
+					NOR: {
 						tally: 0,
 						dirIndex: 0,
 						list: false,
-						dirList: ['u', 'r', 'd', 'r']
+						dirList: [],
+						// dirList: ['u', 'r', 'd', 'r'],
+						dir: 'u'
 					},
-					fi: {
+					FIN: {
 						tally: 0,
 						dirIndex: 0,
 						list: false,
-						dirList: ['u', 'r', 'd', 'r']
+						dirList: [],
+						// dirList: ['u', 'r', 'd', 'r'],
+						dir: 'u'
 					}
 				};
+				const medals = ['bronze', 'silver', 'gold'];
+				let laps = 0;
+				let maxLaps = 1;
 
 				function renderBoard() {
 					const max = board.length;
@@ -191,7 +200,8 @@
 				function checkBarrier(id) {
 					let nextX;
 					let nextY;
-					dir = players[id].dirList[players[id].dirIndex];
+					// dir = players[id].dirList[players[id].dirIndex];
+					dir = players[id].dir;
 
 					switch (dir) {
 						case 'u':
@@ -228,24 +238,51 @@
 								curX = nextX;
 								break;
 						}
+
+						players[id].dirList = [];
 					} else {
-						players[id].dirIndex++;
+						/*players[id].dirIndex++;
 					
 						if (players[id].dirIndex >= players[id].dirList.length) {
 							players[id].dirIndex = 0;
-						}
+						}*/
 
 						if (indX === 10 && !players[id].list) {
-							players[id].dirList = ['u', 'l', 'd', 'l'];
+							// players[id].dirList = ['u', 'l', 'd', 'l'];
 							isFlag = true;
 							players[id].list = true;
 						} else if (indX === 0 && players[id].list) {
-							players[id].dirList = ['u', 'r', 'd', 'r'];
+							// players[id].dirList = ['u', 'r', 'd', 'r'];
+							if (isFlag) {
+								laps++;
+							}
 							isFlag = false;
 							players[id].list = false;
 						}
 
-						dir = players[id].dirList[players[id].dirIndex]; 
+						// dir = players[id].dirList[players[id].dirIndex];
+						if (players[id].dirList.length) {
+							players[id].dir = players[id].dirList.pop();
+						} else {
+							switch (players[id].dir) {
+								case 'u':
+								case 'd':
+									if (players[id].list) {
+										players[id].dir = 'l';
+										players[id].dirList.push('r');
+									} else {
+										players[id].dir = 'r';
+										players[id].dirList.push('l');
+									}
+									break;
+								case 'r':
+								case 'l':
+									players[id].dir = 'u';
+									players[id].dirList.push('d');
+									break;
+							}
+						}
+						
 						checkBarrier(id);
 					} 
 				}
@@ -254,6 +291,7 @@
 					for (let i = 0; i < spaces; i++) {
 						checkBarrier(id);
 						await go(id);
+						winMedal(id);
 					}
 
 					return Promise.resolve();
@@ -311,14 +349,14 @@
 					}
 				}
 				function setUpMarkers() {
-					el('us').style('marginTop', '78px');
-					el('us').style('marginLeft', '0');
+					el('USA').style('marginTop', '78px');
+					el('USA').style('marginLeft', '0');
 		
-					el('no').style('marginTop', '78px');
-					el('no').style('marginLeft', '10px');
+					el('NOR').style('marginTop', '78px');
+					el('NOR').style('marginLeft', '10px');
 
-					el('fi').style('marginTop', '90px');
-					el('fi').style('marginLeft', '0px');
+					el('FIN').style('marginTop', '90px');
+					el('FIN').style('marginLeft', '0px');
 				}
 
 				function switchUser(id) {
@@ -327,7 +365,7 @@
 				}
 
 				function isFin() {
-					return players['no'].tally > 103;
+					return !medals.length;
 				}
 
 				function nextPlayer() {
@@ -342,8 +380,23 @@
 					return player;
 				}
 
-				function isWin() {
-					
+				function winMedal(id) {
+					if (indX === 0 && indY < 4 && laps === maxLaps && !players[id].medal) {
+						const index = 3 - medals.length;
+
+						qryAll('.medal', index).setAttr('title', id);
+						players[id].medal = medals.pop();
+						log(id, players[id].medal);
+					}
+				}
+
+				function medalsStand() {
+					const colors = ['gold', 'silver', 'darkgoldenrod'];
+
+					colors.forEach((color, i) => {
+						qryAll('.medal', i).style('color', color);
+						qryAll('.medal', i).style('cursor', 'pointer');
+					});
 				}
 
 				async function loop() {
@@ -354,35 +407,49 @@
 						players[id].tally = players[id].tally + spaces;
 						switchUser(id);
 						await move(id, spaces);
-						isWin();
 					}
+
+					medalsStand();
 				}
 
 				function events() {
 					document.getElementById('magic-tree').addEventListener('click', e => {
 						if (isFin()) {
 							players = {
-								us: {
+								USA: {
 									tally: 0,
 									dirIndex: 0,
 									list: false,
-									dirList: ['u', 'r', 'd', 'r']
+									dirList: [],
+									dir: 'u'
 								},
-								no: {
+								NOR: {
 									tally: 0,
 									dirIndex: 0,
 									list: false,
-									dirList: ['u', 'r', 'd', 'r']
+									dirList: [],
+									dir: 'u'
 								},
-								fi: {
+								FIN: {
 									tally: 0,
 									dirIndex: 0,
 									list: false,
-									dirList: ['u', 'r', 'd', 'r']
+									dirList: [],
+									dir: 'u'
 								}
 							};
 							isFlag = false;
+							maxLaps = 1;
+							laps = 0;
+							medals.push('bronze');
+							medals.push('silver');
+							medals.push('gold');
 							setUpMarkers();
+							for (let i = 0; i < 3; i++) {
+								qryAll('.medal', i).style('color', 'lightgreen');
+								qryAll('.medal', i).style('cursor', 'default');
+								qryAll('.medal', i).removeAttr('title');
+							}	
 							loop();
 						}
 					}, false);
