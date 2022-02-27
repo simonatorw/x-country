@@ -9,6 +9,7 @@
         --bg-color: black;
         --path-color: white;
       }
+
 			body {
 				background-color: var(--bg-color);
 				color: #ddd;
@@ -20,6 +21,7 @@
 				height: 93vh;
 				margin: 0;
 			}
+
 			#container {
 				display: flex;
 				flex: 0;
@@ -33,7 +35,8 @@
 				flex: 0 0 100%;
 				display: flex;
 			}
-			.tree, .medal {
+
+			.tree, .medal, .level, .magic-tree {
 				width: 20px;
 				height: 20px;
 				background-color: transparent;
@@ -43,10 +46,21 @@
 				top: -2px;
 				left: 5px;
 			}
-			.tree:before, .medal:before {
+	
+			.tree:before, .medal:before, .level:before, .magic-tree:before {
 				content: "\2022";
 				font-size: 20px;
 			}
+
+			.level {
+				cursor: pointer;
+			}
+
+			.magic-tree {
+				color: red;
+				cursor: pointer;
+			}
+
 			.path {
 				width: 20px;
 				height: 20px;
@@ -54,6 +68,7 @@
 				border-top: 1px solid var(--path-color);
 				border-bottom: 1px solid var(--path-color);
 			}
+	
 			.fin {
 				width: 20px;
 				height: 20px;
@@ -61,6 +76,7 @@
 				border-top: 2px solid red;
 				border-bottom: 0;
 			}
+		
 			.up {
 				width: 20px;
 				height: 20px;
@@ -68,6 +84,7 @@
 				border-top: 1px solid #ccc;
 				border-bottom: 1px solid #ccc;
 			}
+		
 			.down {
 				width: 20px;
 				height: 20px;
@@ -75,31 +92,31 @@
 				border-top: 1px solid cyan;
 				border-bottom: 1px solid cyan;
 			}
+		
 			.blank {
 				width: 20px;
 				height: 20px;
 			}
+		
 			#USA {
 				color: blue;
 				position: absolute;
 				font-size: 11px;
 				padding-top: 7px;
 			}
+		
 			#NOR {
 				color: red;
 				position: absolute;
 				font-size: 11px;
 				padding-top: 7px;
 			}
+		
 			#FIN {
 				color: #333;
 				position: absolute;
 				font-size: 11px;
 				padding-top: 7px;
-			}
-			#magic-tree {
-				color: red;
-				cursor: pointer;
 			}
 		</style>
 	</head>
@@ -110,7 +127,7 @@
 
 			(function() {
 				const board = [
-					[0,0,0,0,3,3,3,3,3,3,3],
+					[9,10,10,10,3,3,3,3,3,3,3],
 					[1,1,2,0,3,0,0,0,0,0,3],
 					[1,0,2,0,1,7,7,7,7,0,1],
 					[1,0,2,0,1,0,7,7,7,0,1],
@@ -131,7 +148,9 @@
 					'',
 					'fin',
 					'blank',
-					'medal'
+					'medal',
+					'magic-tree',
+					'level'
 				];
 				let curY;
 				let curX;
@@ -142,51 +161,42 @@
 				let playerIndex = 0;
 				let players = {
 					USA: {
-						tally: 0,
+						name: 'Jessie Diggins',
 						dirIndex: 0,
 						list: false,
 						dirList: [],
 						dir: 'u'
 					},
 					NOR: {
-						tally: 0,
+						name: 'Therese Johaug',
 						dirIndex: 0,
 						list: false,
 						dirList: [],
-						// dirList: ['u', 'r', 'd', 'r'],
 						dir: 'u'
 					},
 					FIN: {
-						tally: 0,
+						name: 'Kerttu Niskanen',
 						dirIndex: 0,
 						list: false,
 						dirList: [],
-						// dirList: ['u', 'r', 'd', 'r'],
 						dir: 'u'
 					}
 				};
-				const medals = ['bronze', 'silver', 'gold'];
+				const medals = ['Bronze', 'Silver', 'Gold'];
 				let laps = 0;
 				let maxLaps = 1;
 
 				function renderBoard() {
 					const max = board.length;
-					let tpl = ``;
-					let id = '';
+					let tpl = '';
 					
 					for (let i = 0; i < max; i++) {
 						for (let j = 0; j < board[i].length; j++) {
 							if (j === 0) {
 								tpl = `${tpl}<div class="row">`;
 							}
-					
-							if (i === 0 && j === 0) {
-								id = 'id="magic-tree"';
-							} else {
-								id = '';
-							}
 
-							tpl = `${tpl}<div ${id} class="${map[board[i][j]]}"></div>`;
+							tpl = `${tpl}<div class="${map[board[i][j]]}"></div>`;
 							
 							if (j === board[i].length - 1) {
 								tpl = `${tpl}</div>`;
@@ -200,7 +210,7 @@
 				function checkBarrier(id) {
 					let nextX;
 					let nextY;
-					// dir = players[id].dirList[players[id].dirIndex];
+
 					dir = players[id].dir;
 
 					switch (dir) {
@@ -241,18 +251,10 @@
 
 						players[id].dirList = [];
 					} else {
-						/*players[id].dirIndex++;
-					
-						if (players[id].dirIndex >= players[id].dirList.length) {
-							players[id].dirIndex = 0;
-						}*/
-
 						if (indX === 10 && !players[id].list) {
-							// players[id].dirList = ['u', 'l', 'd', 'l'];
 							isFlag = true;
 							players[id].list = true;
 						} else if (indX === 0 && players[id].list) {
-							// players[id].dirList = ['u', 'r', 'd', 'r'];
 							if (isFlag) {
 								laps++;
 							}
@@ -260,7 +262,6 @@
 							players[id].list = false;
 						}
 
-						// dir = players[id].dirList[players[id].dirIndex];
 						if (players[id].dirList.length) {
 							players[id].dir = players[id].dirList.pop();
 						} else {
@@ -381,12 +382,12 @@
 				}
 
 				function winMedal(id) {
-					if (indX === 0 && indY < 4 && laps === maxLaps && !players[id].medal) {
+					if (indX === 0 && indY < 4 && laps >= maxLaps && !players[id].medal) {
 						const index = 3 - medals.length;
 
-						qryAll('.medal', index).setAttr('title', id);
+						qryAll('.medal', index).setAttr('title', `${players[id].name} (${id})`);
 						players[id].medal = medals.pop();
-						log(id, players[id].medal);
+						log(`${players[id].medal}:: ${players[id].name} (${id})`);
 					}
 				}
 
@@ -399,12 +400,24 @@
 					});
 				}
 
+				function highlightLevel() {
+					if (laps < maxLaps) {
+						for (let i = 0; i < maxLaps; i++) {
+							if (laps === i) {
+								qryAll('.level', i).style('color', 'blue');
+							} else {
+								qryAll('.level', i).style('color', 'darkgreen');
+							}
+						}
+					}
+				}
+
 				async function loop() {
 					while (!isFin()) {
 						let spaces = rand(0, 10);
 						const id = nextPlayer();
 
-						players[id].tally = players[id].tally + spaces;
+						highlightLevel();
 						switchUser(id);
 						await move(id, spaces);
 					}
@@ -413,25 +426,25 @@
 				}
 
 				function events() {
-					document.getElementById('magic-tree').addEventListener('click', e => {
+					qry('.magic-tree').listener('click', e => {
 						if (isFin()) {
 							players = {
 								USA: {
-									tally: 0,
+									name: 'Jessie Diggins',
 									dirIndex: 0,
 									list: false,
 									dirList: [],
 									dir: 'u'
 								},
 								NOR: {
-									tally: 0,
+									name: 'Therese Johaug',
 									dirIndex: 0,
 									list: false,
 									dirList: [],
 									dir: 'u'
 								},
 								FIN: {
-									tally: 0,
+									name: 'Kerttu Niskanen',
 									dirIndex: 0,
 									list: false,
 									dirList: [],
@@ -439,7 +452,6 @@
 								}
 							};
 							isFlag = false;
-							maxLaps = 1;
 							laps = 0;
 							medals.push('bronze');
 							medals.push('silver');
@@ -451,12 +463,29 @@
 								qryAll('.medal', i).removeAttr('title');
 							}	
 							loop();
+							console.clear();
+							log('Started.');
 						}
-					}, false);
+					});
+
+					for (let i = 0; i < 3; i++) {
+						qryAll('.level', i).listener('click', e => {
+							if (isFin()) {
+								maxLaps = i + 1;
+								for (let j = 0; j < 3; j++) {
+									if (j <= i) {
+										qryAll('.level', j).style('color', 'darkgreen');
+									} else {
+										qryAll('.level', j).style('color', 'lightgreen');
+									}
+								}
+							}
+						});
+					}
 				}
 				
 				function init() {
-					console.log('Started.');
+					log('Started.');
 					renderBoard();
 					events();
 					addMarkers();
